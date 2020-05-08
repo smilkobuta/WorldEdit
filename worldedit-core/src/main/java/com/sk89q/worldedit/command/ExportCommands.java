@@ -19,43 +19,25 @@
 
 package com.sk89q.worldedit.command;
 
-import com.sk89q.minecraft.util.commands.*;
+import com.sk89q.minecraft.util.commands.Command;
+import com.sk89q.minecraft.util.commands.CommandContext;
+import com.sk89q.minecraft.util.commands.CommandException;
+import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.platform.CommandEvent;
-import com.sk89q.worldedit.extension.platform.Actor;
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardWriter;
-import com.sk89q.worldedit.function.block.BlockReplace;
-import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.operation.*;
-import com.sk89q.worldedit.function.pattern.Pattern;
-import com.sk89q.worldedit.history.changeset.BlockOptimizedHistory;
 import com.sk89q.worldedit.history.changeset.ChangeSet;
-import com.sk89q.worldedit.internal.annotation.Direction;
-import com.sk89q.worldedit.internal.annotation.Selection;
-import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.regions.RegionSelector;
-import com.sk89q.worldedit.regions.selector.CuboidRegionSelector;
-import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.util.command.binding.Switch;
-import com.sk89q.worldedit.util.command.parametric.Optional;
 import com.sk89q.worldedit.util.io.Closer;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.world.World;
 
 import java.io.*;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.sk89q.minecraft.util.commands.Logging.LogMode.PLACEMENT;
-import static com.sk89q.minecraft.util.commands.Logging.LogMode.REGION;
 
 /**
  * Export commands.
