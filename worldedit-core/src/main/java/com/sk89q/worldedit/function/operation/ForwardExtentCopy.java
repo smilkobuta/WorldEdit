@@ -66,6 +66,7 @@ public class ForwardExtentCopy implements Operation {
     private Transform currentTransform = null;
     private RegionVisitor lastVisitor;
     private int affected;
+    private Operation next = null;
 
     /**
      * Create a new copy using the region's lowest minimum point as the
@@ -231,8 +232,13 @@ public class ForwardExtentCopy implements Operation {
         return affected;
     }
 
+    public void setNext(Operation next) {
+        this.next = next;
+    }
+
     @Override
     public Operation resume(RunContext run) throws WorldEditException {
+        System.out.println("ForwardExtentCopy resume");
         if (lastVisitor != null) {
             affected += lastVisitor.getAffected();
             lastVisitor = null;
@@ -268,7 +274,8 @@ public class ForwardExtentCopy implements Operation {
                     }
                 }
                 EntityVisitor entityVisitor = new EntityVisitor(entities.iterator(), entityCopy);
-                return new DelegateOperation(this, new OperationQueue(blockVisitor, entityVisitor));
+                DelegateOperation delegateOperation = new DelegateOperation(this, new OperationQueue(blockVisitor, entityVisitor));
+                return new OperationQueue(delegateOperation, next);
             } else {
                 return new DelegateOperation(this, blockVisitor);
             }

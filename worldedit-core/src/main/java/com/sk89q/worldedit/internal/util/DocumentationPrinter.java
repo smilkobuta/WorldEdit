@@ -75,6 +75,7 @@ public final class DocumentationPrinter {
         classes.add(ToolUtilCommands.class);
         classes.add(ToolCommands.class);
         classes.add(UtilityCommands.class);
+        classes.add(ExportCommands.class);
 
         /*for (File f : dir.listFiles()) {
             if (!f.getName().matches("^.*\\.java$")) {

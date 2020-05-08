@@ -24,6 +24,7 @@ import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.minecraft.util.commands.Logging;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.entity.Player;
+import com.sk89q.worldedit.event.platform.CommandEvent;
 import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
@@ -170,6 +171,24 @@ public class ClipboardCommands {
         }
 
         player.print("The clipboard has been pasted at " + to);
+    }
+
+    @Logging(PLACEMENT)
+    public Operation paste_all(Player player, LocalSession session, EditSession editSession,
+                      @Switch('a') boolean ignoreAirBlocks, @Switch('o') boolean atOrigin,
+                      @Switch('s') boolean selectPasted) throws WorldEditException {
+
+        ClipboardHolder holder = session.getClipboard();
+        Clipboard clipboard = holder.getClipboard();
+        Region region = clipboard.getRegion();
+
+        Vector to = atOrigin ? clipboard.getOrigin() : session.getPlacementPosition(player);
+        Operation operation = holder
+                .createPaste(editSession, editSession.getWorld().getWorldData())
+                .to(to)
+                .ignoreAirBlocks(ignoreAirBlocks)
+                .build();
+        return operation;
     }
 
     @Command(

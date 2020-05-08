@@ -122,6 +122,7 @@ public final class CommandManager {
                         .registerMethods(new ToolUtilCommands(worldEdit))
                         .registerMethods(new ToolCommands(worldEdit))
                         .registerMethods(new UtilityCommands(worldEdit))
+                        .registerMethods(new ExportCommands(worldEdit))
                         .register(adapt(new SelectionCommand(new ApplyCommand(new ReplaceParser(), "Set all blocks within selection"), "worldedit.region.set")), "/set")
                         .group("worldedit", "we")
                             .describeAs("WorldEdit commands")
@@ -273,6 +274,7 @@ public final class CommandManager {
                 actor.printError("Usage: " + e.getSimpleUsageString("/"));
             }
         } catch (WrappedCommandException e) {
+            e.printStackTrace();
             Throwable t = e.getCause();
             actor.printError("Please report this error: [See console]");
             actor.printRaw(t.getClass().getName() + ": " + t.getMessage());

@@ -54,6 +54,7 @@ import com.sk89q.worldedit.function.util.RegionOffset;
 import com.sk89q.worldedit.function.visitor.*;
 import com.sk89q.worldedit.history.UndoContext;
 import com.sk89q.worldedit.history.change.BlockChange;
+import com.sk89q.worldedit.history.change.Change;
 import com.sk89q.worldedit.history.changeset.BlockOptimizedHistory;
 import com.sk89q.worldedit.history.changeset.ChangeSet;
 import com.sk89q.worldedit.internal.expression.Expression;
@@ -113,7 +114,28 @@ public class EditSession implements Extent {
 
     @SuppressWarnings("ProtectedField")
     protected final World world;
-    private final ChangeSet changeSet = new BlockOptimizedHistory();
+//    private final ChangeSet changeSet = new BlockOptimizedHistory();
+    private final ChangeSet changeSet = new ChangeSet() {
+        @Override
+        public void add(Change change) {
+            // do nothing!
+        }
+
+        @Override
+        public Iterator<Change> backwardIterator() {
+            return null;
+        }
+
+        @Override
+        public Iterator<Change> forwardIterator() {
+            return null;
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+    };
 
     private @Nullable FastModeExtent fastModeExtent;
     private final SurvivalModeExtent survivalExtent;
@@ -122,7 +144,7 @@ public class EditSession implements Extent {
     private @Nullable BlockQuirkExtent quirkExtent;
     private @Nullable DataValidatorExtent validator;
     private final BlockBagExtent blockBagExtent;
-    private final MultiStageReorder reorderExtent;
+    public final MultiStageReorder reorderExtent;
     private @Nullable ChangeSetExtent changeSetExtent;
     private final MaskingExtent maskingExtent;
     private final BlockChangeLimiter changeLimiter;

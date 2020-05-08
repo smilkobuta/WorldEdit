@@ -33,7 +33,8 @@ import java.util.List;
  */
 public class RegionVisitor implements Operation {
 
-    private final Region region;
+//    private final Region region;
+    private Region region;
     private final RegionFunction function;
     private int affected = 0;
 
@@ -53,11 +54,17 @@ public class RegionVisitor implements Operation {
 
     @Override
     public Operation resume(RunContext run) throws WorldEditException {
+        System.out.println("RegionVisitor resume");
+        int count = 0;
         for (Vector pt : region) {
             if (function.apply(pt)) {
                 affected++;
             }
+            count++;
         }
+
+        this.region = null;
+        System.out.println("RegionVisitor done");
 
         return null;
     }

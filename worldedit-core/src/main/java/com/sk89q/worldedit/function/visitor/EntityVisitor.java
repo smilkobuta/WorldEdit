@@ -63,11 +63,14 @@ public class EntityVisitor implements Operation {
 
     @Override
     public Operation resume(RunContext run) throws WorldEditException {
+        System.out.println("EntityVisitor resume");
         while (iterator.hasNext()) {
             if (function.apply(iterator.next())) {
                 affected++;
             }
+            iterator.remove();
         }
+        System.out.println("EntityVisitor done");
 
         return null;
     }
