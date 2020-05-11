@@ -1,34 +1,64 @@
-![WorldEdit](http://static.sk89q.com/readme/worldedit.png)
+WorldEdit with /worldexport and /worldimport
 =========
 
-WorldEdit is Minecraft mod that turns Minecraft into an in-game map editor (sorta, kinda).
+WorldEdit is Minecraft mod that turns Minecraft into an in-game map editor.
 
-* Make awesome stuff with half the time OR make ***quadriply** awesome* creations with the same time :sparkles:
-* Get lost in hundreds of options and functions that even we've forgotten existed
-* Utilize Photoshop-like tools like "selection areas" and "brushes"
-* Making fjords and other natural wonders with weird names
-* Also: fix grief, broken water, missing snow, raging fires, and other :poop:
+This is one of fork programs of that.
+Please check [original project](https://github.com/EngineHub/WorldEdit) and learn how to compile it.
 
-WorldEdit is open source!, so if you've just learned how to make a button blink, I probably recommend picking up a book on CS algorithms. The project is licensed using the GNU Lesser General Public License license, v3.
+Original //copy, //paste, //schematic save, //schematic load commands works perfectly when you export or import schematic under 300 x 300 blocks.
 
-Compiling
+But when you use these commands over 1000 x 1000 blocks, it uses so much memory and finished in failure.
+
+So I implemented /worldexport and /worldimport commands to handle large area.
+
+
+
+/worldexport
 ---------
 
-See [COMPILING.md](COMPILING.md) for a guide on compiling WorldEdit.
+Usage: `/worldexport x1 y1 z1 x2 y2 z2 max_block_length`
 
-Contributing
-------------
+- x1 y1 z1: These are a coordinate which is usually specified by //pos1 command.
+- x2 y2 z2: These are another coordinate which is usually specified by //pos2 command.
+- max_block_length: Area length of one schematic. 200 ~ 300 is recommended.
 
-We happily accept contributions, especially through pull requests on GitHub.
-Submissions must be licensed under the GNU Lesser General Public License v3.
+You should run `/tp` command before running `/worldexport` command.
+So that you can easily calculate and import in another minecraft world precisely.
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for important guidelines to follow.
+This command exports schematic files and one properties file.
 
-Links
------
+- {Minecraft install directory}/config/worldedit/schematics/exportworldmod.properties
+- {Minecraft install directory}/config/worldedit/schematics/exportworldmod_0_0_0.schematic
 
-* [Visit our website](http://www.enginehub.org/)
-* [IRC channel](http://skq.me/irc/irc.esper.net/sk89q/) (#sk89q on irc.esper.net)
-* [Issue tracker](http://youtrack.sk89q.com/issues/WORLDEDIT)
-* [Continuous integration](http://builds.enginehub.org) [![Build Status](https://travis-ci.org/sk89q/WorldEdit.svg?branch=master)](https://travis-ci.org/sk89q/WorldEdit)
-* [End-user documentation](http://wiki.sk89q.com/wiki/WorldEdit)
+I recommend to save those files after export is done.
+These will be overwritten by next /worldexport command.
+
+
+
+## /worldimport
+
+Usage: `/worldimport [from] [to]` 
+
+- from: Enter 1~ number to specify the number of schematic file which you want to start import.(Optional)
+- to: Enter 1~ number of last to import.(Optional)
+
+Example: `/worldimport 1 3` ... this will import only 3 schematic files.
+
+This command import schematic files which you exported last time.
+
+
+## Important point!
+
+**These two commands takes very long time.**
+You should check `{Minecraft install directory}/logs/debug.log` by `less +F` command while exporting and importing.
+
+After `/worldimport`, Minecraft App will be halt, but please don't close it!
+Forge is running and generates `{World directory}/region/*.mca` files.
+
+Importing is really finished when *.mca files are not updated.
+Check /region/ directory to judge finished or not.
+
+I also recommend to try with small area first.
+Importing larger area takes 10 ~ hours...
+With my PC (Ryzen7 3700X, 32 GM memory), 3000 x 130 x 3000 takes 12 hours.

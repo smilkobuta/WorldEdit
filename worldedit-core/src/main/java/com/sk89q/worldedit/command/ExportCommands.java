@@ -87,7 +87,7 @@ public class ExportCommands {
         } catch (Exception e) {
             e.printStackTrace();
             player.print("[EXPWORLD] Wrong usage! Usage:");
-            player.print("[EXPWORLD] /exportworld x1 y1 z1 x2 y2 z2 max_block_length");
+            player.print("[EXPWORLD] /worldexport x1 y1 z1 x2 y2 z2 max_block_length");
             return;
         }
 
