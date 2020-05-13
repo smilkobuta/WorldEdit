@@ -144,7 +144,7 @@ public class EditSession implements Extent {
     private @Nullable BlockQuirkExtent quirkExtent;
     private @Nullable DataValidatorExtent validator;
     private final BlockBagExtent blockBagExtent;
-    public final MultiStageReorder reorderExtent;
+    private final MultiStageReorder reorderExtent;
     private @Nullable ChangeSetExtent changeSetExtent;
     private final MaskingExtent maskingExtent;
     private final BlockChangeLimiter changeLimiter;
@@ -378,6 +378,10 @@ public class EditSession implements Extent {
      */
     public boolean hasFastMode() {
         return fastModeExtent != null && fastModeExtent.isEnabled();
+    }
+
+    public MultiStageReorder getReorderExtent() {
+        return reorderExtent;
     }
 
     /**

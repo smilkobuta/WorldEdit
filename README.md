@@ -17,11 +17,13 @@ So I implemented /worldexport and /worldimport commands to handle large area.
 /worldexport
 ---------
 
-Usage: `/worldexport x1 y1 z1 x2 y2 z2 max_block_length`
+Usage: `/worldexport x1 y1 z1 x2 y2 z2 max_block_length [from] [to]`
 
 - x1 y1 z1: These are a coordinate which is usually specified by //pos1 command.
 - x2 y2 z2: These are another coordinate which is usually specified by //pos2 command.
 - max_block_length: Area length of one schematic. 200 ~ 300 is recommended.
+- from: Enter 1~ number to specify the number of schematic file which you want to start export.(Optional)
+- to: Enter 1~ number of last to export.(Optional)
 
 You should run `/tp` command before running `/worldexport` command.
 So that you can easily calculate and import in another minecraft world precisely.

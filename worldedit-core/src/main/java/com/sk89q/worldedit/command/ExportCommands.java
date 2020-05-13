@@ -26,9 +26,12 @@ import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.entity.Player;
 import com.sk89q.worldedit.event.platform.CommandEvent;
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard;
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.function.operation.*;
 import com.sk89q.worldedit.history.changeset.ChangeSet;
 import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.util.io.Closer;
 
 import java.io.*;
@@ -61,7 +64,7 @@ public class ExportCommands {
         usage = "",
         desc = "Export specified area to schematic files. (use //copy and //schematic save)",
         min = 7,
-        max = 7
+        max = 9
     )
     @CommandPermissions("worldedit.export.exportworld")
     public void exportworld(Player player, LocalSession session, EditSession editSession, CommandContext args) throws WorldEditException {
@@ -74,6 +77,8 @@ public class ExportCommands {
         int y2 = 0;
         int z2 = 0;
         int max_block_length = 0;
+        int from = 1;
+        int to = -1;
         String worldname = "exportworldmod";
 
         try {
@@ -84,10 +89,16 @@ public class ExportCommands {
             y2 = args.getInteger(4);
             z2 = args.getInteger(5);
             max_block_length = args.getInteger(6);
+            if (args.argsLength() > 7) {
+                from = args.getInteger(7);
+            }
+            if (args.argsLength() > 8) {
+                to = args.getInteger(8);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             player.print("[EXPWORLD] Wrong usage! Usage:");
-            player.print("[EXPWORLD] /worldexport x1 y1 z1 x2 y2 z2 max_block_length");
+            player.print("[EXPWORLD] /worldexport x1 y1 z1 x2 y2 z2 max_block_length [from] [to]");
             return;
         }
 
@@ -110,7 +121,6 @@ public class ExportCommands {
             int num_z = (int) Math.ceil(Math.abs((float) diff_z / max_block_length));
 
             ArrayList<String> destPosList = new ArrayList<String>();
-            String from_prev = null;
 
             prop.setProperty("worldname", worldname);
             prop.setProperty("num_x", String.valueOf(num_x));
@@ -120,62 +130,53 @@ public class ExportCommands {
             Date startTime = new Date();
             int count = 0;
             int total_count = num_x * num_y * num_z;
+            int range_count = 0;
+            int range_total_count = total_count;
 
-            for (int i = 0; i < num_x; i++) {
+            if (from > 1) {
+                range_total_count -= from - 1;
+            }
+            if (to != -1) {
+                range_total_count -= total_count - to;
+            }
+
+            player.print("§e" + from + "-" + to + "/" + total_count + "(" + range_total_count + ")");
+
+            ExportOperation firstOperation = null;
+            ExportOperation prevOperation = null;
+
+            loopX: for (int i = 0; i < num_x; i++) {
                 for (int j = 0; j < num_y; j++) {
                     for (int k = 0; k < num_z; k++) {
                         // Export
                         String posid = i + "_" + j + "_" + k;
-                        System.out.println("posid=" + posid + " count=" + count + "/" + total_count);
+                        count++;
 
-                        String[] from_to = calculate_coordinates(coordinate1_list, coordinate2_list, i, j, k, max_block_length);
-                        String from = from_to[0];
-                        String to = from_to[1];
-
-                        SelectionCommands selection = new SelectionCommands(worldEdit);
-                        CommandContext pos1Args = new CommandContext("pos1 " + from.replace(" ", ","));
-                        selection.pos1(player, session, editSession, pos1Args);
-//                        runCommand(player, "/tp @p " + from);
-//                        runCommand(player, "//pos1");
-
-                        CommandContext pos2Args = new CommandContext("pos2 " + to.replace(" ", ","));
-                        selection.pos2(player, session, editSession, pos2Args);
-//                        runCommand(player, "/tp @p " + to);
-//                        runCommand(player, "//pos2");
-
-                        Region region = session.getSelection(player.getWorld());
-                        ClipboardCommands clipboard = new ClipboardCommands(worldEdit);
-                        clipboard.copy(player, session, editSession, region, false, null);
-//                        runCommand(player, "//copy");
-
-                        SchematicCommands schematic = new SchematicCommands(worldEdit);
-                        schematic.save(player, session, "schematic", worldname + "_" + posid);
-//                        runCommand(player, "//schematic save " + worldname + "_" + posid);
-
-//                        commandRunner.addCommand("/tp @p " + from, 300, null);
-//                        commandRunner.addCommand("//pos1", 200, null);
-//                        commandRunner.addCommand("/tp @p " + to, 300, null);
-//                        commandRunner.addCommand("//pos2", 200, null);
-//                        commandRunner.addCommand("//copy", 1000, "worldedit-copy");
-//                        commandRunner.addCommand("//schematic save " + worldname + "_" + posid, 1000, "worldedit-save");
-
-                        // Import
-                        String dst_pos;
-                        if (from_prev == null) {
-                            dst_pos = "~0 ~0 ~0";
-                        } else {
-                            dst_pos = coordinate_diff(from_prev, from);
+                        if (count < from) {
+                            System.out.println("skip posid=" + posid + " count=" + count + "/" + total_count);
+                            continue;
+                        } else if (to != -1 && count > to) {
+                            System.out.println("done");
+                            break loopX;
                         }
-                        from_prev = from;
 
-                        destPosList.add(from + "~" + to);
+                        range_count++;
 
-                        // Done
-                        count ++;
-                        System.out.println(count + "/" + total_count + " done time-left=" + timeLeft(startTime, total_count, count));
-                        player.print("§e" + count + "/" + total_count + " §edone");
-//                        runCommand(player, "/say §e" + count + "/" + total_count + " §edone");
-//                        commandRunner.addServerCommand("/say §e" + count + "/" + total_count + " §edone", 100, null);
+                        String[] fromTo = calculate_coordinates(coordinate1_list, coordinate2_list, i, j, k, max_block_length);
+
+                        // For import
+                        destPosList.add(fromTo[0] + "~" + fromTo[1]);
+
+                        ExportOperation exportOperation = new ExportOperation(startTime, posid, fromTo[0], fromTo[1], count
+                                , total_count, range_count, range_total_count, worldname);
+                        if (firstOperation == null) {
+                            firstOperation = exportOperation;
+                            firstOperation.setVars(player, session, editSession);
+                        }
+                        if (prevOperation != null) {
+                            prevOperation.setNext(exportOperation);
+                        }
+                        prevOperation = exportOperation;
                     }
                 }
             }
@@ -183,7 +184,13 @@ public class ExportCommands {
             prop.setProperty("exported_coordinates", join(destPosList.toArray(new String[0]), ","));
             prop.store(bos, "no-comment");
 
-        } catch (IOException | CommandException e) {
+            if (firstOperation != null) {
+                OperationQueue queue = new OperationQueue();
+                queue.offer(firstOperation);
+                Operations.completeLegacy(queue);
+            }
+
+        } catch (IOException e) {
             player.printError("Properties file could not written: " + e.getMessage());
         } finally {
             try {
@@ -244,12 +251,21 @@ public class ExportCommands {
 
             int count = 0;
             int total_count = num_x * num_y * num_z;
+            int range_count = 0;
+            int range_total_count = total_count;
 
-            player.print("§e" + from + "-" + to);
+            if (from > 1) {
+                range_total_count -= from - 1;
+            }
+            if (to != -1) {
+                range_total_count -= total_count - to;
+            }
+
+            player.print("§e" + from + "-" + to + "/" + total_count + "(" + range_total_count + ")");
 
             Date startTime = new Date();
-            MyOperation firstOperation = null;
-            MyOperation prevOperation = null;
+            ImportOperation firstOperation = null;
+            ImportOperation prevOperation = null;
 
             loopX: for (int i = 0; i < num_x; i++) {
                 for (int j = 0; j < num_y; j++) {
@@ -259,24 +275,25 @@ public class ExportCommands {
                         count ++;
 
                         if (count < from) {
-                            total_count--;
                             System.out.println("skip posid=" + posid + " count=" + count + "/" + total_count);
                             continue;
                         } else if (to != -1 && count > to) {
-                            total_count--;
                             System.out.println("done");
                             break loopX;
                         }
 
-                        MyOperation myOperation = new MyOperation(startTime, posid, fromTo[0], fromTo[1], count
-                                , total_count, player, session, editSession, worldname);
+                        range_count ++;
+
+                        ImportOperation importOperation = new ImportOperation(startTime, posid, fromTo[0], fromTo[1], count
+                                , total_count, range_count, range_total_count, worldname);
                         if (firstOperation == null) {
-                            firstOperation = myOperation;
+                            firstOperation = importOperation;
+                            firstOperation.setVars(player, session, editSession);
                         }
                         if (prevOperation != null) {
-                            prevOperation.setNext(myOperation);
+                            prevOperation.setNext(importOperation);
                         }
-                        prevOperation = myOperation;
+                        prevOperation = importOperation;
                     }
                 }
             }
@@ -399,8 +416,8 @@ public class ExportCommands {
         WorldEdit.getInstance().getPlatformManager().getCommandManager().handleCommand(commandEvent);
     }
 
-    class MyOperation implements Operation {
-        private MyOperation next;
+    class ExportOperation implements Operation {
+        private ExportOperation next;
 
         private Date startTime;
         private String from;
@@ -408,39 +425,188 @@ public class ExportCommands {
         private String posid;
         private int count;
         private int total_count;
+        private int range_count;
+        private int range_total_count;
         private Player player;
         private LocalSession session;
         private String worldname;
         private EditSession editSession;
         private Operation operation;
 
-        public MyOperation(Date startTime, String posid, String from, String to, int count, int total_count
-                , Player player, LocalSession session
-                , EditSession editSession, String worldname) {
+        public ExportOperation(Date startTime, String posid, String from, String to, int count, int total_count
+                , int range_count, int range_total_count, String worldname) {
             this.startTime = startTime;
             this.from = from;
             this.to = to;
             this.posid = posid;
             this.count = count;
             this.total_count = total_count;
-            this.player = player;
-            this.session = session;
+            this.range_count = range_count;
+            this.range_total_count = range_total_count;
             this.worldname = worldname;
-            this.editSession = editSession;
         }
 
-        public void setNext(MyOperation next) {
+        public void setNext(ExportOperation next) {
             this.next = next;
+        }
+
+        public void setVars(Player player, LocalSession session, EditSession editSession) {
+            this.player = player;
+            this.session = session;
+            this.editSession = editSession;
         }
 
         @Override
         public Operation resume(RunContext run) throws WorldEditException {
-            System.out.println("MyOperation resume");
-            System.out.println("posid=" + posid + " count=" + count + "/" + total_count);
+            System.out.println("ExportOperation resume");
+            System.out.println("posid=" + posid + " count=" + count + "/" + total_count + " range_count=" + range_count + "/" + range_total_count);
+            System.out.println("from=" + from + " to=" + to);
+
+            try {
+                editSession.disableQueue();
+                editSession.getReorderExtent().setEnabled(false);
+
+                SelectionCommands selection = new SelectionCommands(worldEdit);
+                CommandContext pos1Args = new CommandContext("pos1 " + from.replace(" ", ","));
+
+                selection.pos1(player, session, editSession, pos1Args);
+//                runCommand(player, "/tp @p " + from);
+//                runCommand(player, "//pos1");
+
+                CommandContext pos2Args = new CommandContext("pos2 " + to.replace(" ", ","));
+                selection.pos2(player, session, editSession, pos2Args);
+//                runCommand(player, "/tp @p " + to);
+//                runCommand(player, "//pos2");
+
+                Region region = session.getSelection(player.getWorld());
+                ClipboardCommands clipboard = new ClipboardCommands(worldEdit);
+                operation = clipboard.copy_operation(player, session, editSession, region, false, null);
+//                runCommand(player, "//copy");
+
+                ((ForwardExtentCopy) operation).setNext(new Operation() {
+                    @Override
+                    public Operation resume(RunContext run) throws WorldEditException {
+                        operation = null;
+                        System.out.println("ExportOperation resume in setNext");
+
+                        try {
+                            SchematicCommands schematic = new SchematicCommands(worldEdit);
+                            schematic.save(player, session, "schematic", worldname + "_" + posid);
+
+//                            runCommand(player, "//schematic save " + worldname + "_" + posid);
+
+                            // remove BaseBlock array recursive.
+                            ClipboardHolder holder = session.getClipboard();
+                            Clipboard clipboardR = holder.getClipboard();
+                            ((BlockArrayClipboard) clipboardR).clear();
+//                            session.setClipboard(null);
+//
+//                            clipboard.clearClipboard(player, session, editSession);
+//                            session.clearHistory();
+                            WorldEdit.getInstance().getSessionManager().clear();
+
+                            // Done
+                            System.out.println(count + "/" + total_count + "(" + range_count + "/" + range_total_count + ")" + " done. time-left=" + timeLeft(startTime, range_total_count, range_count));
+                            player.print("§e" + count + "/" + total_count + "(" + range_count + "/" + range_total_count + ")" + " §edone");
+                            printMemory();
+
+                            ExportOperation op = next;
+                            ExportOperation.this.next = null;
+
+                            if (op != null) {
+                                op.setVars(player, session, editSession);
+                            }
+
+                            ExportOperation.this.player = null;
+                            ExportOperation.this.session = null;
+                            ExportOperation.this.editSession = null;
+                            ExportOperation.this.operation = null;
+
+                            return op;
+                        } catch (CommandException e) {
+                            e.printStackTrace();
+                        }
+
+                        return null;
+                    }
+
+                    @Override
+                    public void cancel() {
+                    }
+
+                    @Override
+                    public void addStatusMessages(List<String> messages) {
+                    }
+                });
+
+                Operations.completeLegacy(operation);
+
+            } catch (CommandException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        public void cancel() {
+
+        }
+
+        @Override
+        public void addStatusMessages(List<String> messages) {
+
+        }
+    }
+
+    class ImportOperation implements Operation {
+        private ImportOperation next;
+
+        private Date startTime;
+        private String from;
+        private String to;
+        private String posid;
+        private int count;
+        private int total_count;
+        private int range_count;
+        private int range_total_count;
+        private Player player;
+        private LocalSession session;
+        private String worldname;
+        private EditSession editSession;
+        private Operation operation;
+
+        public ImportOperation(Date startTime, String posid, String from, String to, int count, int total_count
+                , int range_count, int range_total_count, String worldname) {
+            this.startTime = startTime;
+            this.from = from;
+            this.to = to;
+            this.posid = posid;
+            this.count = count;
+            this.total_count = total_count;
+            this.range_count = range_count;
+            this.range_total_count = range_total_count;
+            this.worldname = worldname;
+        }
+
+        public void setNext(ImportOperation next) {
+            this.next = next;
+        }
+
+        public void setVars(Player player, LocalSession session, EditSession editSession) {
+            this.player = player;
+            this.session = session;
+            this.editSession = editSession;
+        }
+
+        @Override
+        public Operation resume(RunContext run) throws WorldEditException {
+            System.out.println("ImportOperation resume");
+            System.out.println("posid=" + posid + " count=" + count + "/" + total_count + " range_count=" + range_count + "/" + range_total_count);
             System.out.println("from=" + from + " to=" + to);
 
             editSession.disableQueue();
-            editSession.reorderExtent.setEnabled(false);
+            editSession.getReorderExtent().setEnabled(false);
 
 //            System.out.println("tp @a " + dst_pos_list[count]);
 //            runCommand(player, "say tp @a " + dst_pos_list[count]);
@@ -452,21 +618,44 @@ public class ExportCommands {
 //            server.commandManager.executeCommand(player, "//schematic load " + worldname + "_" + posid);
 
             ClipboardCommands clipboardCommand = new ClipboardCommands(worldEdit);
-            operation = clipboardCommand.paste_all(player, session, editSession, false, false, false);
+            operation = clipboardCommand.paste_operation(player, session, editSession, false, false, false);
 //            server.commandManager.executeCommand(player, "//paste");
 
             ((ForwardExtentCopy) operation).setNext(new Operation() {
                 @Override
                 public Operation resume(RunContext run) throws WorldEditException {
                     operation = null;
-                    System.out.println("MyOperation resume in setNext");
+                    System.out.println("ImportOperation resume in setNext");
                     clipboardCommand.clearClipboard(player, session, editSession);
                     System.out.println("editSession count=" + editSession.getBlockChangeCount() + " limit=" + editSession.getBlockChangeLimit());
                     ChangeSet changeSet = editSession.getChangeSet();
                     System.out.println("ChangeSet size=" + changeSet.size());
-                    System.out.println(count + "/" + total_count + " done. time-left=" + timeLeft(startTime, total_count, count));
-                    player.print("§e" + count + "/" + total_count + " §edone");
-                    return next;
+
+                    // remove BaseBlock array recursive.
+                    ClipboardHolder holder = session.getClipboard();
+                    Clipboard clipboardR = holder.getClipboard();
+                    ((BlockArrayClipboard) clipboardR).clear();
+
+                    WorldEdit.getInstance().getSessionManager().clear();
+
+                    ImportOperation op = next;
+                    ImportOperation.this.next = null;
+
+                    if (op != null) {
+                        op.setVars(player, session, editSession);
+                    }
+
+                    // Done
+                    System.out.println(count + "/" + total_count + "(" + range_count + "/" + range_total_count + ")" + " done. time-left=" + timeLeft(startTime, range_total_count, range_count));
+                    player.print("§e" + count + "/" + total_count + "(" + range_count + "/" + range_total_count + ")" + " §edone");
+                    printMemory();
+
+                    ImportOperation.this.player = null;
+                    ImportOperation.this.session = null;
+                    ImportOperation.this.editSession = null;
+                    ImportOperation.this.operation = null;
+
+                    return op;
                 }
 
                 @Override
@@ -491,6 +680,15 @@ public class ExportCommands {
         public void addStatusMessages(List<String> messages) {
 
         }
+    }
+
+    public void printMemory() {
+        int maxMemory = Math.round(Runtime.getRuntime().maxMemory() / 1024 / 1024);
+        int totalMemory = Math.round(Runtime.getRuntime().totalMemory() / 1024 / 1024);
+        int freeMemory = Math.round(Runtime.getRuntime().freeMemory() / 1024 / 1024);
+        int usedMemory = totalMemory - freeMemory;
+        int memPercent = (int) Math.round((double) usedMemory / maxMemory * 100);
+        System.out.println("Memory usage: " + memPercent + "% " + usedMemory + "/" + maxMemory + "M");
     }
 
     public String timeLeft(Date startTime, int totalCount, int count) {

@@ -95,6 +95,25 @@ public class ClipboardCommands {
         player.print(region.getArea() + " block(s) were copied.");
     }
 
+    public Operation copy_operation(Player player, LocalSession session, EditSession editSession,
+                     @Selection Region region, @Switch('e') boolean copyEntities,
+                     @Switch('m') Mask mask) throws WorldEditException {
+
+        BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
+        clipboard.setOrigin(session.getPlacementPosition(player));
+        ForwardExtentCopy copy = new ForwardExtentCopy(editSession, region, clipboard, region.getMinimumPoint());
+        copy.setCopyingEntities(copyEntities);
+        if (mask != null) {
+            copy.setSourceMask(mask);
+        }
+//        Operations.completeLegacy(copy);
+        session.setClipboard(new ClipboardHolder(clipboard, editSession.getWorld().getWorldData()));
+
+//        player.print(region.getArea() + " block(s) were copied.");
+
+        return copy;
+    }
+
     @Command(
         aliases = { "/cut" },
         flags = "em",
@@ -174,7 +193,7 @@ public class ClipboardCommands {
     }
 
     @Logging(PLACEMENT)
-    public Operation paste_all(Player player, LocalSession session, EditSession editSession,
+    public Operation paste_operation(Player player, LocalSession session, EditSession editSession,
                       @Switch('a') boolean ignoreAirBlocks, @Switch('o') boolean atOrigin,
                       @Switch('s') boolean selectPasted) throws WorldEditException {
 

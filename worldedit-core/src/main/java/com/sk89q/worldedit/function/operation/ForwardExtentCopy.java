@@ -275,9 +275,13 @@ public class ForwardExtentCopy implements Operation {
                 }
                 EntityVisitor entityVisitor = new EntityVisitor(entities.iterator(), entityCopy);
                 DelegateOperation delegateOperation = new DelegateOperation(this, new OperationQueue(blockVisitor, entityVisitor));
-                return new OperationQueue(delegateOperation, next);
+                OperationQueue op = new OperationQueue(delegateOperation, next);
+                next = null;
+                return op;
             } else {
-                return new DelegateOperation(this, blockVisitor);
+                OperationQueue op = new OperationQueue(new DelegateOperation(this, blockVisitor), next);
+                next = null;
+                return op;
             }
         } else {
             return null;
