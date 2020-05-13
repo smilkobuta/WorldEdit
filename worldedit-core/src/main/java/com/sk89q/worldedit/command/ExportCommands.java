@@ -152,20 +152,20 @@ public class ExportCommands {
                         String posid = i + "_" + j + "_" + k;
                         count++;
 
-                        if (count < from) {
-                            System.out.println("skip posid=" + posid + " count=" + count + "/" + total_count);
-                            continue;
-                        } else if (to != -1 && count > to) {
-                            System.out.println("done");
-                            break loopX;
-                        }
-
-                        range_count++;
-
                         String[] fromTo = calculate_coordinates(coordinate1_list, coordinate2_list, i, j, k, max_block_length);
 
                         // For import
                         destPosList.add(fromTo[0] + "~" + fromTo[1]);
+
+                        if (count < from) {
+                            System.out.println("skip posid=" + posid + " count=" + count + "/" + total_count);
+                            continue;
+                        } else if (to != -1 && count > to) {
+                            System.out.println("skip posid=" + posid + " count=" + count + "/" + total_count);
+                            continue;
+                        }
+
+                        range_count++;
 
                         ExportOperation exportOperation = new ExportOperation(startTime, posid, fromTo[0], fromTo[1], count
                                 , total_count, range_count, range_total_count, worldname);
@@ -608,6 +608,13 @@ public class ExportCommands {
             editSession.disableQueue();
             editSession.getReorderExtent().setEnabled(false);
 
+            // remove BaseBlock array recursive.
+//            ClipboardHolder holder = session.getClipboard();
+//            Clipboard clipboardR = holder.getClipboard();
+//            ((BlockArrayClipboard) clipboardR).clear();
+//
+//            WorldEdit.getInstance().getSessionManager().clear();
+
 //            System.out.println("tp @a " + dst_pos_list[count]);
 //            runCommand(player, "say tp @a " + dst_pos_list[count]);
 //            runCommand(player, "tp @a " + dst_pos_list[count]);
@@ -630,13 +637,6 @@ public class ExportCommands {
                     System.out.println("editSession count=" + editSession.getBlockChangeCount() + " limit=" + editSession.getBlockChangeLimit());
                     ChangeSet changeSet = editSession.getChangeSet();
                     System.out.println("ChangeSet size=" + changeSet.size());
-
-                    // remove BaseBlock array recursive.
-                    ClipboardHolder holder = session.getClipboard();
-                    Clipboard clipboardR = holder.getClipboard();
-                    ((BlockArrayClipboard) clipboardR).clear();
-
-                    WorldEdit.getInstance().getSessionManager().clear();
 
                     ImportOperation op = next;
                     ImportOperation.this.next = null;
