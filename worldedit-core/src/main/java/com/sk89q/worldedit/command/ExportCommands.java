@@ -608,12 +608,15 @@ public class ExportCommands {
             editSession.disableQueue();
             editSession.getReorderExtent().setEnabled(false);
 
-            // remove BaseBlock array recursive.
-//            ClipboardHolder holder = session.getClipboard();
-//            Clipboard clipboardR = holder.getClipboard();
-//            ((BlockArrayClipboard) clipboardR).clear();
-//
-//            WorldEdit.getInstance().getSessionManager().clear();
+            try {
+                // remove BaseBlock array recursive.
+                ClipboardHolder holder = session.getClipboard();
+                Clipboard clipboardR = holder.getClipboard();
+                ((BlockArrayClipboard) clipboardR).clear();
+
+                WorldEdit.getInstance().getSessionManager().clear();
+            } catch (EmptyClipboardException e) {
+            }
 
 //            System.out.println("tp @a " + dst_pos_list[count]);
 //            runCommand(player, "say tp @a " + dst_pos_list[count]);
